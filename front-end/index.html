@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dropline by Vijayasurya T — drop a note, pick it up anywhere</title>
+<meta name="author" content="Vijayasurya T">
+<meta name="description" content="A serverless demo on Route 53, CloudFront, S3, API Gateway, Lambda and DynamoDB.">
+<meta name="theme-color" content="#030407">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='28' fill='%23030407'/%3E%3Ccircle cx='50' cy='50' r='20' fill='%23D4FF24'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<canvas id="fx" aria-hidden="true"></canvas>
+<div class="cur-ring" id="ring" aria-hidden="true"><span></span></div><div class="cur-dot" id="dot" aria-hidden="true"></div>
+
+<header class="nav">
+  <a class="logo" href="#top" data-cursor>Dropline<i></i></a>
+  <p class="mode" id="mode" role="status"><b></b><span>Checking…</span></p>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="hero-copy">
+      <h1><span class="line"><span>Drop a note.</span></span><span class="line"><span>Pick it up anywhere.</span></span></h1>
+      <p class="lede">Every request below crosses Route 53, CloudFront, S3, API Gateway, Lambda and DynamoDB. Write something, send it, and watch it travel.</p>
+      <p class="owner"><i></i>A serverless project designed and built by <b>Vijayasurya T</b></p>
+    </div>
+
+    <form class="panel drop" id="dropForm" novalidate>
+      <h2>Drop a note</h2>
+      <label><span>Your name <small>optional</small></span><input id="dName" maxlength="40" autocomplete="nickname" placeholder="Anonymous"></label>
+      <label>Note <textarea id="dNote" maxlength="280" rows="4" placeholder="Write anything, up to 280 characters"></textarea></label>
+      <div class="row"><span class="count" id="count">0 / 280</span><button class="btn mag" id="dropBtn" data-cursor="Drop">Drop note</button></div>
+      <p class="status" id="dropStatus" role="status" aria-live="polite"></p>
+      <div class="receipt" id="receipt" hidden>
+        <p>Your pickup code</p><strong id="code">------</strong>
+        <button type="button" class="ghost" id="copyBtn" data-cursor="Copy">Copy code</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="flow" aria-labelledby="flowH">
+    <h2 id="flowH">Follow the request</h2>
+    <div class="stage">
+      <svg id="map" viewBox="0 0 1000 330" role="img" aria-label="Request path: Route 53 to CloudFront to API Gateway to Lambda to DynamoDB, with S3 serving the site from CloudFront">
+        <g class="edges">
+          <path class="edge" data-a="r53" data-b="cf" pathLength="1" d="M118 240H262"/>
+          <path class="edge" data-a="cf" data-b="s3" pathLength="1" d="M300 212V102"/>
+          <path class="edge" data-a="cf" data-b="apigw" pathLength="1" d="M318 240H492"/>
+          <path class="edge" data-a="apigw" data-b="lambda" pathLength="1" d="M548 240H672"/>
+          <path class="edge" data-a="lambda" data-b="ddb" pathLength="1" d="M728 240H872"/>
+        </g>
+        <g id="nodes">
+          <g class="node" tabindex="0" data-id="r53" data-x="90" data-y="240" data-info="Route 53 turns your domain name into the address of the CloudFront distribution."><circle class="halo" r="28"/><circle class="disc" r="28"/><text class="ab" y="5">R53</text><text class="nm" y="58">Route 53</text></g>
+          <g class="node" tabindex="0" data-id="cf" data-x="290" data-y="240" data-info="CloudFront serves the site from the nearest edge location and forwards API calls onward."><circle class="halo" r="28"/><circle class="disc" r="28"/><text class="ab" y="5">CF</text><text class="nm" y="58">CloudFront</text></g>
+          <g class="node" tabindex="0" data-id="s3" data-x="290" data-y="74" data-info="An S3 bucket holds this page's HTML, CSS and JavaScript. There is no web server."><circle class="halo" r="28"/><circle class="disc" r="28"/><text class="ab" y="5">S3</text><text class="nm side" x="44" y="5">S3 bucket</text></g>
+          <g class="node" tabindex="0" data-id="apigw" data-x="520" data-y="240" data-info="API Gateway receives the HTTPS call and routes it to the right Lambda function."><circle class="halo" r="28"/><circle class="disc" r="28"/><text class="ab" y="5">API</text><text class="nm" y="58">API Gateway</text></g>
+          <g class="node" tabindex="0" data-id="lambda" data-x="700" data-y="240" data-info="Lambda validates the note, makes a pickup code and talks to the database. It only runs while handling a request."><circle class="halo" r="28"/><circle class="disc" r="28"/><text class="ab" y="5">λ</text><text class="nm" y="58">Lambda</text></g>
+          <g class="node" tabindex="0" data-id="ddb" data-x="900" data-y="240" data-info="DynamoDB stores each note under its pickup code and deletes it after 7 days using TTL."><circle class="halo" r="28"/><circle class="disc" r="28"/><text class="ab" y="5">DB</text><text class="nm" y="58">DynamoDB</text></g>
+        </g>
+        <circle id="packet" r="7" cx="90" cy="240"/>
+      </svg>
+      <p class="info" id="info">Hover or focus a service to see what it does.</p>
+    </div>
+    <div class="log" id="log" role="log" aria-live="polite"></div>
+  </section>
+
+  <section class="pick" aria-labelledby="pickH">
+    <h2 id="pickH">Pick up a note</h2>
+    <p class="intro">Every note you drop gets a 6-character pickup code. Enter that code here to read the note again. Your browser asks API Gateway, Lambda looks the code up in DynamoDB, and the note comes back.</p>
+    <ol class="steps">
+      <li><b>Drop a note</b><span>Write a message above and press Drop note. You get a code.</span></li>
+      <li><b>Keep the code</b><span>Copy it, or send it to a friend. Anyone with the code can read the note.</span></li>
+      <li><b>Pick it up</b><span>Enter the code below. The code from your last drop is already filled in.</span></li>
+    </ol>
+    <form class="panel" id="pickForm" novalidate>
+      <label>Pickup code<input id="pCode" maxlength="6" autocomplete="off" spellcheck="false" placeholder="K7QD2M"></label>
+      <div class="row"><button type="button" class="ghost" id="listBtn" data-cursor="Latest">Show latest drops</button><button class="btn mag" data-cursor="Open">Pick up</button></div>
+      <p class="status" id="pickStatus" role="status" aria-live="polite"></p>
+    </form>
+    <article class="note" id="result" hidden><p id="rText"></p><footer><b id="rName"></b><time id="rTime"></time><code id="rId"></code></footer></article>
+    <ul class="feed" id="feed"></ul>
+  </section>
+</main>
+
+<footer class="foot"><p class="made">Designed and built by <b>Vijayasurya T</b></p>
+  <p>This page is hosted on S3, delivered by CloudFront and named by Route 53. Notes travel through API Gateway and Lambda into DynamoDB.</p></footer>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
